@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 namespace dotnet_zipp_and_zapp
@@ -31,13 +33,48 @@ namespace dotnet_zipp_and_zapp
 		[DllImport(@"minifb.dll")]
 		private static extern bool mfb_wait_sync(IntPtr window);
 
+		[DllImport(@"minifb.dll", CallingConvention = CallingConvention.Cdecl)]
+		private static extern void mfb_set_active_callback(IntPtr window, ActiveCallbackDelegate callback);
+
+		[DllImport("minifb.dll", CallingConvention = CallingConvention.Cdecl)]
+		private static extern void mfb_set_resize_callback(IntPtr window, ResizeCallbackDelegate callback);
+
+		[DllImport(@"minifb.dll")]
+		private static extern void mfb_set_target_fps(int fps);
+
 		static readonly IntPtr BackBuffer = Marshal.AllocHGlobal(GAME_RES_WIDTH * GAME_RES_HEIGHT * GAME_RES_BPP);
 		private static readonly Random Rnd = new();
-		
+
+		public delegate void ActiveCallbackDelegate(IntPtr window, bool isActive);
+
+		public delegate void ResizeCallbackDelegate(IntPtr window, int width, int height);
+
+		public static void Active(IntPtr window, bool isActive)
+		{
+			Debug.Write(window.ToString());
+			Debug.WriteLine(isActive.ToString());
+		}
+
+		public static void Resize(IntPtr window, int width, int height)
+		{
+			Debug.WriteLine($"Width: {width}   Height: {height}");
+		}
+
 		static void Main()
 		{
-			//Console.WriteLine("Hello World!");
-			IntPtr windowHandle = mfb_open_ex("The Adventures of Zipp and Zapp", 800, 600, MfbWindowFlags.WF_RESIZABLE);
+
+			ActiveCallbackDelegate act = new(Active);
+			ResizeCallbackDelegate resize = new(Resize);
+
+
+			IntPtr windowHandle = mfb_open_ex("The Adventures of Zipp and Zapp", 1920, 1080, MfbWindowFlags.WF_FULLSCREEN);
+
+			mfb_set_target_fps(2000);
+
+			mfb_set_active_callback(windowHandle, act);
+			mfb_set_resize_callback(windowHandle, resize);
+
+
 			if (windowHandle == (IntPtr)0)
 			{
 				return;
@@ -45,23 +82,24 @@ namespace dotnet_zipp_and_zapp
 
 			do
 			{
-				for (int y = 0; y < 240; y++)
+			/*	for (int y = 0; y < 240; y++)
 				{
 					DrawHorizontalLine(0, 384, y, (byte)y, (byte)(240 - y), 0);
-				}
+				}*/
 
 				for (int y = 0; y < GAME_RES_HEIGHT; y++)
 				{
 					for (int x = 0; x < GAME_RES_WIDTH; x++)
 					{
-						DrawPixel(x, y, (byte)Rnd.Next(0,255), (byte)Rnd.Next(0,255), (byte)Rnd.Next(0,255));
+						DrawPixel(x, y, (byte)Rnd.Next(0, 255), (byte)Rnd.Next(0, 255), (byte)Rnd.Next(0, 255));
 					}
 				}
 
 				int state = mfb_update_ex(windowHandle, BackBuffer, 384, 240);
-				
 
-				if (state < 0) {
+
+				if (state < 0)
+				{
 					break;
 				}
 			} while (mfb_wait_sync(windowHandle));
@@ -69,23 +107,21 @@ namespace dotnet_zipp_and_zapp
 
 		}
 
-		static void DrawHorizontalLine(int startX, int endX, int y, byte red, byte green, byte blue)
+		/*static void DrawHorizontalLine(int startX, int endX, int y, byte red, byte green, byte blue)
 		{
 			int startingPixel = (y * GAME_RES_WIDTH + startX) * GAME_RES_BPP;
 			for (int x = startX; x < endX; x++)
 			{
-				Marshal.WriteByte(BackBuffer + startingPixel + x * GAME_RES_BPP, blue);     // blue
-				Marshal.WriteByte(BackBuffer + startingPixel + x * GAME_RES_BPP + 1, green);    // green
-				Marshal.WriteByte(BackBuffer + startingPixel + x * GAME_RES_BPP + 2, red);  // red
+				int pixel = (red << 16) + (green << 8) + blue;
+				Marshal.WriteInt32(BackBuffer, startingPixel + x * GAME_RES_BPP, pixel);
 			}
-		}
+		}*/
 
 		static void DrawPixel(int x, int y, byte red, byte green, byte blue)
 		{
 			int startingOffset = (y * GAME_RES_WIDTH + x) * GAME_RES_BPP;
-			Marshal.WriteByte(BackBuffer + startingOffset , blue);							// blue
-			Marshal.WriteByte(BackBuffer + startingOffset + 1, green);						// green
-			Marshal.WriteByte(BackBuffer + startingOffset + 2, red);							// red
+			int pixel = (red << 16) + (green << 8) + blue;
+			Marshal.WriteInt32(BackBuffer + startingOffset, pixel);
 		}
 	}
 }
