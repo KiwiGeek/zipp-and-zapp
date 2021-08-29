@@ -1,96 +1,72 @@
 ﻿using System;
+using System.Diagnostics;
+using System.Drawing;
+using System.Drawing.Imaging;
+using System.Reflection.Metadata.Ecma335;
 using System.Runtime.InteropServices;
+using MiniFBSharp;
+using MiniFBSharp.Enums;
 
 // ReSharper disable once CheckNamespace
-internal static class MiniFB
+public static class MiniFB
 {
 
-
-	#region .NET specific methods
-
-	public static ulong CreateBackBuffer(uint width, uint height)
+	static MiniFB()
 	{
-		return (ulong)Marshal.AllocHGlobal((int)(width * height * 4));		// 32bit pixels
+		// set up call backs here.
 	}
-
-	#endregion
 
 
 	#region Create a Window
 
-	[Flags] private enum MfbWindowFlags
-	{
-		// ReSharper disable UnusedMember.Local
-		WF_RESIZABLE = 0x01,
-		WF_FULLSCREEN = 0x02,
-		WF_FULLSCREEN_DESKTOP = 0x04,
-		WF_BORDERLESS = 0x08,
-		WD_ALWAYS_ON_TOP = 0x16
-		// ReSharper restore UnusedMember.Local
-	}
-
-	[Flags] public enum WindowFlags
-	{
-		Resizable = 1,
-		Fullscreen = 2,
-		FullscreenDesktop = 4,
-		Borderless = 8,
-		AlwaysOnTop = 16
-	}
-
 	[DllImport(@"minifb.dll", BestFitMapping = false, ThrowOnUnmappableChar = true)] private static extern IntPtr mfb_open_ex(string title, uint width, uint height, MfbWindowFlags flags);
-
-	public static ulong OpenEx(string title, uint width, uint height, WindowFlags flags)
+	public static MiniFBWindow OpenWindow(string title, Size dimensions, WindowFlags flags)
 	{
-		return (ulong)mfb_open_ex(title, width, height, (MfbWindowFlags)flags);
+		// todo: validate arguments
+		IntPtr handle = mfb_open_ex(title, (uint)dimensions.Width, (uint)dimensions.Height, (MfbWindowFlags)flags);
+		return new MiniFBWindow(handle);
 	}
 
 	[DllImport(@"minifb.dll", BestFitMapping = false, ThrowOnUnmappableChar = true)] private static extern IntPtr mfb_open(string title, uint width, uint height);
-
-	public static ulong Open(string title, uint width, uint height)
+	public static MiniFBWindow OpenWindow(string title, Size dimensions)
 	{
-		return (ulong)mfb_open(title, width, height);
+		// todo: validate arguments
+		IntPtr handle = mfb_open(title, (uint)dimensions.Width, (uint)dimensions.Height);
+		MiniFBWindow result = new MiniFBWindow(handle);
+
+
+		return result;
 	}
 
 	#endregion
 
 	#region Update the display
 
-	//	// Update the display
-	//	// Input buffer is assumed to be a 32-bit buffer of the size given in the open call
-	//	// Will return a negative status if something went wrong or the user want to exit
-	//	// Also updates the window events
-
 	[DllImport(@"minifb.dll")] private static extern int mfb_update(IntPtr window, IntPtr buffer);
+	public static int Update(MiniFBWindow window, Bitmap image)
+	{
+		BitmapData bitmapData = image.LockBits(new Rectangle(0, 0, image.Width, image.Height), ImageLockMode.ReadOnly,
+			PixelFormat.Format32bppRgb);
 
-	public static int Update(ulong windowHandle, ulong bufferHandle)
-	{
-		return mfb_update((IntPtr)windowHandle, (IntPtr)bufferHandle);
-	}
-	public static int Update(ulong windowHandle, IntPtr bufferHandle)
-	{
-		return mfb_update((IntPtr)windowHandle, bufferHandle);
-	}
-	public static int Update(IntPtr windowHandle, IntPtr bufferHandle)
-	{
-		return mfb_update(windowHandle, bufferHandle);
-	}
-	public static int Update(IntPtr windowHandle, ulong bufferHandle)
-	{
-		return mfb_update(windowHandle, (IntPtr)bufferHandle);
-	}
+		int result = mfb_update(window.Handle, bitmapData.Scan0);
 
-
-	[DllImport(@"minifb.dll")] private static extern int mfb_update_ex(IntPtr window, IntPtr buffer, uint width, uint height);
-
-	public static int UpdateEx(ulong windowHandle, ref byte[] buffer, uint width, uint height)
-	{
-		IntPtr nativeBuffer = Marshal.AllocHGlobal(buffer.Length);
-		Marshal.Copy(buffer, 0, nativeBuffer, buffer.Length);
-		int result =  mfb_update_ex((IntPtr)windowHandle, nativeBuffer, width, height);
-		Marshal.FreeHGlobal(nativeBuffer);
+		image.UnlockBits(bitmapData);
 		return result;
 	}
+
+	[DllImport(@"minifb.dll")] private static extern int mfb_update_ex(IntPtr window, IntPtr buffer, uint width, uint height);
+	public static int Update(MiniFBWindow window, Bitmap image, Size dimensions)
+	{
+		BitmapData bitmapData = image.LockBits(new Rectangle(0, 0, image.Width, image.Height),
+				ImageLockMode.ReadOnly,
+				PixelFormat.Format32bppRgb);
+
+		int result = mfb_update_ex(window.Handle, bitmapData.Scan0, (uint)image.Width, (uint)image.Height);
+
+		image.UnlockBits(bitmapData);
+		return result;
+	}
+
 	#endregion
 
 	#region Only update window events (unfinished)
@@ -100,9 +76,13 @@ internal static class MiniFB
 
 	#endregion
 
-	#region Close the window (unfinished)
-	//// Close the window
-	//__declspec(dllexport) void mfb_close(struct mfb_window *window);
+	#region Close the window
+
+	[DllImport(@"minifb.dll")] private static extern void mfb_close(IntPtr window);
+	public static void CloseWindow(MiniFBWindow window)
+	{
+		mfb_close(window.Handle);
+	}
 
 	#endregion
 
@@ -119,12 +99,17 @@ internal static class MiniFB
 
 	#endregion
 
-	#region DPI (unfinished)
-	//// DPI
-	//// [Deprecated]: Probably a better name will be mfb_get_monitor_scale
-	//__declspec(dllexport) void mfb_get_monitor_dpi(struct mfb_window *window, float* dpi_x, float* dpi_y);
-	//	// Use this instead
-	//	__declspec(dllexport) void mfb_get_monitor_scale(struct mfb_window *window, float* scale_x, float* scale_y);
+	#region DPI
+
+	[DllImport(@"minifb.dll")] private static extern unsafe void mfb_get_monitor_scale(IntPtr window, float* scale_x, float* scale_y);
+	public static unsafe (float ScaleX, float ScaleY) GetMonitorScale(MiniFBWindow windowHandle)
+	{
+		float scaleX;
+		float scaleY;
+		mfb_get_monitor_scale(windowHandle.Handle, &scaleX, &scaleY);
+		return (scaleX, scaleY);
+	}
+
 	#endregion
 
 	#region Callbacks (unfinished)
@@ -137,24 +122,25 @@ internal static class MiniFB
 	//	__declspec(dllexport) void mfb_set_mouse_move_callback(struct mfb_window *window, mfb_mouse_move_func callback);
 	//	__declspec(dllexport) void mfb_set_mouse_scroll_callback(struct mfb_window *window, mfb_mouse_scroll_func callback);
 
-	[DllImport(@"minifb.dll", CallingConvention = CallingConvention.Cdecl)]
-	public static extern void mfb_set_active_callback(IntPtr window, ActiveCallbackDelegate callback);
 
-	[DllImport("minifb.dll", CallingConvention = CallingConvention.Cdecl)]
-	public static extern void mfb_set_resize_callback(IntPtr window, ResizeCallbackDelegate callback);
+	[DllImport("minifb.dll", CallingConvention = CallingConvention.Cdecl)] private static extern void mfb_set_resize_callback(IntPtr window, ResizeCallbackDelegate callback);
 
-	public delegate void ActiveCallbackDelegate(IntPtr window, bool isActive);
+	//public delegate void ActiveChanged<bool>
 
-	public delegate void ResizeCallbackDelegate(IntPtr window, int width, int height);
+
+
+	private delegate void ResizeCallbackDelegate(IntPtr window, int width, int height);
+
+
 	#endregion
 
 	#region Frames Per Second
 
 	[DllImport(@"minifb.dll")] private static extern bool mfb_wait_sync(IntPtr window);
 
-	public static bool WaitSync(ulong windowHandle)
+	public static bool WaitSync(MiniFBWindow window)
 	{
-		return mfb_wait_sync((IntPtr)windowHandle);
+		return mfb_wait_sync(window.Handle);
 	}
 
 	[DllImport(@"minifb.dll")] private static extern void mfb_set_target_fps(int fps);
@@ -190,15 +176,15 @@ internal static class MiniFB
 
 	#region Timer (unfinished)
 
-//// Timer
-//__declspec(dllexport) struct mfb_timer *  mfb_timer_create(void);
-//__declspec(dllexport) void                mfb_timer_destroy(struct mfb_timer *tmr);
-//__declspec(dllexport) void                mfb_timer_reset(struct mfb_timer *tmr);
-//__declspec(dllexport) double              mfb_timer_now(struct mfb_timer *tmr);
-//__declspec(dllexport) double              mfb_timer_delta(struct mfb_timer *tmr);
-//__declspec(dllexport) double              mfb_timer_get_frequency(void);
-//__declspec(dllexport) double              mfb_timer_get_resolution(void);
+	//// Timer
+	//__declspec(dllexport) struct mfb_timer *  mfb_timer_create(void);
+	//__declspec(dllexport) void                mfb_timer_destroy(struct mfb_timer *tmr);
+	//__declspec(dllexport) void                mfb_timer_reset(struct mfb_timer *tmr);
+	//__declspec(dllexport) double              mfb_timer_now(struct mfb_timer *tmr);
+	//__declspec(dllexport) double              mfb_timer_delta(struct mfb_timer *tmr);
+	//__declspec(dllexport) double              mfb_timer_get_frequency(void);
+	//__declspec(dllexport) double              mfb_timer_get_resolution(void);
 
 	#endregion
-	
+
 }

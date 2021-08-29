@@ -1,7 +1,12 @@
-﻿using System;
-using System.Diagnostics;
-using System.Runtime.InteropServices;
+﻿#define HORZ_LINES
+#define COLORED_DOTS
 
+using System;
+using System.Diagnostics;
+using System.Drawing;
+using System.Drawing.Imaging;
+using MiniFBSharp;
+using MiniFBSharp.Enums;
 
 namespace dotnet_zipp_and_zapp
 {
@@ -12,10 +17,8 @@ namespace dotnet_zipp_and_zapp
 		private const int GAME_RES_WIDTH = 384;
 		private const int GAME_RES_HEIGHT = 240;
 		private const int GAME_RES_BPP = 4;
-		
-		static ulong _backBuffer;
+
 		private static readonly Random Rnd = new();
-		private static byte[] buffer;
 
 		public static void Active(IntPtr window, bool isActive)
 		{
@@ -31,71 +34,80 @@ namespace dotnet_zipp_and_zapp
 		static void Main()
 		{
 
-			_backBuffer = MiniFB.CreateBackBuffer(GAME_RES_WIDTH, GAME_RES_HEIGHT);
-			buffer = new byte[GAME_RES_BPP * GAME_RES_HEIGHT * GAME_RES_WIDTH];
+			Bitmap image = new Bitmap(GAME_RES_WIDTH, GAME_RES_HEIGHT);
+			Graphics g = Graphics.FromImage(image);
+			//g.FillRectangle(new SolidBrush(Color.Wheat), 10, 10, 100, 100);
 
-			MiniFB.ActiveCallbackDelegate act = new(Active);
-			MiniFB.ResizeCallbackDelegate resize = new(Resize);
 
-			ulong windowHandle = MiniFB.Open("The Adventures of Zipp and Zapp", 1920, 1080);
+			//	MiniFB.ActiveCallbackDelegate act = new(Active);
+			//	MiniFB.ResizeCallbackDelegate resize = new(Resize);
+
+			MiniFBWindow gameWindow = MiniFB.OpenWindow("The Adventures of Zipp and Zapp", new Size(800, 600), WindowFlags.Resizable);
 			MiniFB.SetTargetFPS(200);
 			Debug.WriteLine(MiniFB.GetTargetFPS());
 
-			MiniFB.mfb_set_active_callback((IntPtr)windowHandle, act);
-			MiniFB.mfb_set_resize_callback((IntPtr)windowHandle, resize);
+			gameWindow.ActiveChanged += GameWindow_ActiveChanged;
 
+			(float scaleX, float scaleY) = MiniFB.GetMonitorScale(gameWindow);
 
-			if (windowHandle == 0)
-			{
-				return;
-			}
+			//MiniFB.mfb_set_active_callback((IntPtr)windowHandle, act);
+			//MiniFB.mfb_set_resize_callback((IntPtr)windowHandle, resize);
 
 			do
 			{
+#if HORZ_LINES
 				for (int y = 0; y < 240; y++)
 				{
-					DrawHorizontalLine(0, 384, y, (byte)y, (byte)(240 - y), 0);
+					g.DrawLine(new Pen(Color.FromArgb(y, 240 - y, 0)), new Point(0, y), new Point(GAME_RES_WIDTH, y));
 				}
+#endif
 
-			/*	for (int y = 0; y < GAME_RES_HEIGHT; y++)
+#if COLORED_DOTS
+
+				BitmapData bd = image.LockBits(new Rectangle(0, 0, image.Width, image.Height), ImageLockMode.WriteOnly,
+					PixelFormat.Format32bppArgb);
+
+				for (int y = 0; y < GAME_RES_HEIGHT; y++)
 				{
 					for (int x = 0; x < GAME_RES_WIDTH; x++)
 					{
-						DrawPixel(x, y, (byte)Rnd.Next(0, 255), (byte)Rnd.Next(0, 255), (byte)Rnd.Next(0, 255));
+
+						PlotPixel(bd, x, y, Color.FromArgb(Rnd.Next(0, 255), Rnd.Next(0, 255), Rnd.Next(0, 255)));
+
+						unsafe
+						{
+							byte* startingMemoryOffset = (byte*)bd.Scan0;
+							int rowOffset = bd.Stride * y;
+							startingMemoryOffset[rowOffset + (x * 4) + 0] = (byte)Rnd.Next(0, 255);			// blue
+							startingMemoryOffset[rowOffset + (x * 4) + 1] = (byte)Rnd.Next(0, 255);			// green
+							startingMemoryOffset[rowOffset + (x * 4) + 2] = (byte)Rnd.Next(0, 255);			// red
+						}
 					}
-				}*/
+				}
 
-				int state = MiniFB.UpdateEx(windowHandle, ref buffer, 384, 200);
+				image.UnlockBits(bd);
+#endif
 
+
+				int state = MiniFB.Update(gameWindow, image, new Size(GAME_RES_WIDTH, GAME_RES_HEIGHT));
 
 				if (state < 0)
 				{
 					break;
 				}
-			} while (MiniFB.WaitSync(windowHandle));
+			} while (MiniFB.WaitSync(gameWindow));
 
 
 		}
 
-		static void DrawHorizontalLine(int startX, int endX, int y, byte red, byte green, byte blue)
+		private static void GameWindow_ActiveChanged(object sender, bool e)
 		{
-			int startingOffset = (y * GAME_RES_WIDTH + startX);
-			for (int x = startX; x < endX; x++)
-			{
-				Span<int> pixels = MemoryMarshal.Cast<byte,int>(buffer);
-				pixels[startingOffset + x] = /*(red << 16) + (green << 8)*/ + blue;
-				//buffer[startingOffset + x * GAME_RES_BPP] = blue;
-				//buffer[(startingOffset + x * GAME_RES_BPP) + 1] = green;
-				//buffer[(startingOffset + x * GAME_RES_BPP) + 2] = red;
-			}
+			Debug.Print(e.ToString());
 		}
 
-		static void DrawPixel(int x, int y, byte red, byte green, byte blue)
+		private static void PlotPixel(BitmapData bd, int x, int y, Color c)
 		{
-			int startingOffset = (y * GAME_RES_WIDTH + x) * GAME_RES_BPP;
-			buffer[startingOffset] = blue;
-			buffer[startingOffset + 1] = green;
-			buffer[startingOffset + 2] = red;
+			
 		}
 	}
 }
