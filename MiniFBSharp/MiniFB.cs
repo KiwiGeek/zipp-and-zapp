@@ -11,12 +11,6 @@ using MiniFBSharp.Enums;
 public static class MiniFB
 {
 
-	static MiniFB()
-	{
-		// set up call backs here.
-	}
-
-
 	#region Create a Window
 
 	[DllImport(@"minifb.dll", BestFitMapping = false, ThrowOnUnmappableChar = true)] private static extern IntPtr mfb_open_ex(string title, uint width, uint height, MfbWindowFlags flags);
@@ -24,7 +18,9 @@ public static class MiniFB
 	{
 		// todo: validate arguments
 		IntPtr handle = mfb_open_ex(title, (uint)dimensions.Width, (uint)dimensions.Height, (MfbWindowFlags)flags);
-		return new MiniFBWindow(handle);
+		MiniFBWindow result = new MiniFBWindow(handle);
+
+		return result;
 	}
 
 	[DllImport(@"minifb.dll", BestFitMapping = false, ThrowOnUnmappableChar = true)] private static extern IntPtr mfb_open(string title, uint width, uint height);
@@ -33,7 +29,6 @@ public static class MiniFB
 		// todo: validate arguments
 		IntPtr handle = mfb_open(title, (uint)dimensions.Width, (uint)dimensions.Height);
 		MiniFBWindow result = new MiniFBWindow(handle);
-
 
 		return result;
 	}
@@ -126,8 +121,6 @@ public static class MiniFB
 	[DllImport("minifb.dll", CallingConvention = CallingConvention.Cdecl)] private static extern void mfb_set_resize_callback(IntPtr window, ResizeCallbackDelegate callback);
 
 	//public delegate void ActiveChanged<bool>
-
-
 
 	private delegate void ResizeCallbackDelegate(IntPtr window, int width, int height);
 

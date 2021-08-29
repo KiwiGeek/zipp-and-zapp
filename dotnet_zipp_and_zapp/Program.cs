@@ -5,109 +5,124 @@ using System;
 using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Imaging;
+using System.Drawing.Text;
+using System.Runtime.InteropServices;
 using MiniFBSharp;
 using MiniFBSharp.Enums;
 
 namespace dotnet_zipp_and_zapp
 {
 
+	public enum GameState
+	{
+		TitleScreen,
+		MainMenu,
+		Options
+	}
+
 	class Program
 	{
 
 		private const int GAME_RES_WIDTH = 384;
 		private const int GAME_RES_HEIGHT = 240;
-		private const int GAME_RES_BPP = 4;
 
-		private static readonly Random Rnd = new();
+		internal static GameState gameState = GameState.TitleScreen;
+		private static MiniFBWindow _gameWindow;
+		private static Bitmap _image;
+		private static Graphics _graphics;
 
-		public static void Active(IntPtr window, bool isActive)
-		{
-			Debug.Write(window.ToString());
-			Debug.WriteLine(isActive.ToString());
-		}
-
-		public static void Resize(IntPtr window, int width, int height)
-		{
-			Debug.WriteLine($"Width: {width}   Height: {height}");
-		}
-
-		static void Main()
+		private static void Main()
 		{
 
-			Bitmap image = new Bitmap(GAME_RES_WIDTH, GAME_RES_HEIGHT);
-			Graphics g = Graphics.FromImage(image);
-			//g.FillRectangle(new SolidBrush(Color.Wheat), 10, 10, 100, 100);
+			_image = new Bitmap(GAME_RES_WIDTH, GAME_RES_HEIGHT);
+			_graphics = Graphics.FromImage(_image);
+			_graphics.TextRenderingHint = TextRenderingHint.SingleBitPerPixelGridFit;
 
+			_gameWindow = MiniFB.OpenWindow("The Adventures of Zipp and Zapp", new Size(800, 450), WindowFlags.Resizable);
 
-			//	MiniFB.ActiveCallbackDelegate act = new(Active);
-			//	MiniFB.ResizeCallbackDelegate resize = new(Resize);
-
-			MiniFBWindow gameWindow = MiniFB.OpenWindow("The Adventures of Zipp and Zapp", new Size(800, 600), WindowFlags.Resizable);
-			MiniFB.SetTargetFPS(200);
-			Debug.WriteLine(MiniFB.GetTargetFPS());
-
-			gameWindow.ActiveChanged += GameWindow_ActiveChanged;
-
-			(float scaleX, float scaleY) = MiniFB.GetMonitorScale(gameWindow);
-
-			//MiniFB.mfb_set_active_callback((IntPtr)windowHandle, act);
-			//MiniFB.mfb_set_resize_callback((IntPtr)windowHandle, resize);
+			MiniFB.SetTargetFPS(60);
 
 			do
 			{
-#if HORZ_LINES
-				for (int y = 0; y < 240; y++)
+
+				// Main game loop:
+				//
+				// 1) Update the game state
+				// 2) Process any input
+				// 3) Render the screen
+				// 4) Wait for Sync.
+
+				UpdateGameState();
+
+				ProcessPlayerGameInput();
+
+				if (RenderScreen() < 0) { break; }
+
+			} while (MiniFB.WaitSync(_gameWindow));
+
+		}
+
+		private static void ProcessPlayerGameInput()
+		{
+			switch (gameState)
+			{
+				case GameState.TitleScreen:
 				{
-					g.DrawLine(new Pen(Color.FromArgb(y, 240 - y, 0)), new Point(0, y), new Point(GAME_RES_WIDTH, y));
+					GameStates.TitleScreen.ProcessInput();
+					break;
 				}
-#endif
-
-#if COLORED_DOTS
-
-				BitmapData bd = image.LockBits(new Rectangle(0, 0, image.Width, image.Height), ImageLockMode.WriteOnly,
-					PixelFormat.Format32bppArgb);
-
-				for (int y = 0; y < GAME_RES_HEIGHT; y++)
-				{
-					for (int x = 0; x < GAME_RES_WIDTH; x++)
-					{
-
-						PlotPixel(bd, x, y, Color.FromArgb(Rnd.Next(0, 255), Rnd.Next(0, 255), Rnd.Next(0, 255)));
-
-						unsafe
-						{
-							byte* startingMemoryOffset = (byte*)bd.Scan0;
-							int rowOffset = bd.Stride * y;
-							startingMemoryOffset[rowOffset + (x * 4) + 0] = (byte)Rnd.Next(0, 255);			// blue
-							startingMemoryOffset[rowOffset + (x * 4) + 1] = (byte)Rnd.Next(0, 255);			// green
-							startingMemoryOffset[rowOffset + (x * 4) + 2] = (byte)Rnd.Next(0, 255);			// red
-						}
-					}
-				}
-
-				image.UnlockBits(bd);
-#endif
-
-
-				int state = MiniFB.Update(gameWindow, image, new Size(GAME_RES_WIDTH, GAME_RES_HEIGHT));
-
-				if (state < 0)
+				case GameState.MainMenu:
 				{
 					break;
 				}
-			} while (MiniFB.WaitSync(gameWindow));
-
-
+				case GameState.Options:
+				{
+					break;
+				}
+			}
 		}
 
-		private static void GameWindow_ActiveChanged(object sender, bool e)
+		private static void UpdateGameState()
 		{
-			Debug.Print(e.ToString());
+			switch (gameState)
+			{
+				case GameState.TitleScreen:
+				{
+					GameStates.TitleScreen.UpdateGameState();
+					break;
+				}
+				case GameState.MainMenu:
+				{
+					break;
+				}
+				case GameState.Options:
+				{
+					break;
+				}
+			}
 		}
 
-		private static void PlotPixel(BitmapData bd, int x, int y, Color c)
+		private static int RenderScreen()
 		{
-			
+			switch (gameState)
+			{
+				case GameState.TitleScreen:
+				{
+					GameStates.TitleScreen.Render(_image, _graphics);
+					break;
+				}
+				case GameState.MainMenu:
+				{
+					break;
+				}
+				case GameState.Options:
+				{
+					break;
+				}
+			}
+
+			return MiniFB.Update(_gameWindow, _image, new Size(GAME_RES_WIDTH, GAME_RES_HEIGHT));
 		}
+
 	}
 }

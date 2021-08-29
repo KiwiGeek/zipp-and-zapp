@@ -25,4 +25,17 @@
     <ProjectReference Include="..\MiniFBSharp\MiniFBSharp.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Assets\TitleScreens\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="Assets\TitleScreens\TitleScreen01.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Assets\TitleScreens\TitleScreen02.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>
