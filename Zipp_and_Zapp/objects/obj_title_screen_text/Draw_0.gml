@@ -6,5 +6,5 @@ if (frame < 420)
 }
 else 
 {
-	draw_sprite_ext(spr_title_screen, title_screen_to_draw, 0, 0, 2, 2, 0, c_white, opacity);
+	draw_sprite_ext(spr_title_screen, title_screen_to_draw, 0, 0, 1, 1, 0, c_white, opacity);
 }
