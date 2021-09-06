@@ -1,12 +1,21 @@
 {
   "resources": [
+    {"id":{"name":"spr_main_menu_new_game","path":"sprites/spr_main_menu_new_game/spr_main_menu_new_game.yy",},"order":3,},
     {"id":{"name":"snd_title_screen","path":"sounds/snd_title_screen/snd_title_screen.yy",},"order":5,},
+    {"id":{"name":"obj_main_menu_settings","path":"objects/obj_main_menu_settings/obj_main_menu_settings.yy",},"order":10,},
     {"id":{"name":"spr_title_screen","path":"sprites/spr_title_screen/spr_title_screen.yy",},"order":0,},
     {"id":{"name":"fnt_title_screen","path":"fonts/fnt_title_screen/fnt_title_screen.yy",},"order":4,},
+    {"id":{"name":"spr_main_menu_settings","path":"sprites/spr_main_menu_settings/spr_main_menu_settings.yy",},"order":8,},
+    {"id":{"name":"spr_main_menu_load_game","path":"sprites/spr_main_menu_load_game/spr_main_menu_load_game.yy",},"order":7,},
+    {"id":{"name":"obj_main_menu_item","path":"objects/obj_main_menu_item/obj_main_menu_item.yy",},"order":4,},
     {"id":{"name":"spr_main_menu_background","path":"sprites/spr_main_menu_background/spr_main_menu_background.yy",},"order":1,},
     {"id":{"name":"obj_title_screen_text","path":"objects/obj_title_screen_text/obj_title_screen_text.yy",},"order":2,},
+    {"id":{"name":"spr_main_menu_quit","path":"sprites/spr_main_menu_quit/spr_main_menu_quit.yy",},"order":9,},
+    {"id":{"name":"obj_main_menu_new_game","path":"objects/obj_main_menu_new_game/obj_main_menu_new_game.yy",},"order":12,},
+    {"id":{"name":"obj_main_menu_load_game","path":"objects/obj_main_menu_load_game/obj_main_menu_load_game.yy",},"order":13,},
     {"id":{"name":"room_main_menu","path":"rooms/room_main_menu/room_main_menu.yy",},"order":0,},
     {"id":{"name":"obj_main_menu_background_animator","path":"objects/obj_main_menu_background_animator/obj_main_menu_background_animator.yy",},"order":2,},
+    {"id":{"name":"obj_main_menu_exit","path":"objects/obj_main_menu_exit/obj_main_menu_exit.yy",},"order":11,},
     {"id":{"name":"room_title_screen","path":"rooms/room_title_screen/room_title_screen.yy",},"order":3,},
   ],
   "Options": [
