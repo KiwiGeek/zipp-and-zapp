@@ -24,7 +24,9 @@
   "physicsKinematic": false,
   "physicsShapePoints": [],
   "eventList": [],
-  "properties": [],
+  "properties": [
+    {"varType":1,"value":"3","rangeEnabled":false,"rangeMin":0.0,"rangeMax":10.0,"listItems":[],"multiselect":false,"filters":[],"resourceVersion":"1.0","name":"menu_position","tags":[],"resourceType":"GMObjectProperty",},
+  ],
   "overriddenProperties": [],
   "parent": {
     "name": "main menu",
