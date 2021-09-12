@@ -8,7 +8,6 @@
     {"id":{"name":"spr_main_menu_settings","path":"sprites/spr_main_menu_settings/spr_main_menu_settings.yy",},"order":8,},
     {"id":{"name":"spr_main_menu_load_game","path":"sprites/spr_main_menu_load_game/spr_main_menu_load_game.yy",},"order":7,},
     {"id":{"name":"obj_main_menu_item","path":"objects/obj_main_menu_item/obj_main_menu_item.yy",},"order":4,},
-    {"id":{"name":"spr_main_menu_background","path":"sprites/spr_main_menu_background/spr_main_menu_background.yy",},"order":1,},
     {"id":{"name":"obj_title_screen_text","path":"objects/obj_title_screen_text/obj_title_screen_text.yy",},"order":2,},
     {"id":{"name":"spr_main_menu_quit","path":"sprites/spr_main_menu_quit/spr_main_menu_quit.yy",},"order":9,},
     {"id":{"name":"obj_main_menu_keyboard_controller","path":"objects/obj_main_menu_keyboard_controller/obj_main_menu_keyboard_controller.yy",},"order":14,},
@@ -46,7 +45,7 @@
   ],
   "IncludedFiles": [],
   "MetaData": {
-    "IDEVersion": "2.3.3.574",
+    "IDEVersion": "2.3.4.580",
   },
   "resourceVersion": "1.4",
   "name": "Zipp_and_Zapp",
